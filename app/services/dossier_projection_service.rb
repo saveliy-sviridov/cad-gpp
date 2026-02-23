@@ -22,6 +22,8 @@ class DossierProjectionService
         :avis
       when :dossier_labels
         :labels
+      when :linked_dossier
+        :linked_dossier
       end
     end.flatten.uniq
 

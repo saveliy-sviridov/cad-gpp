@@ -33,6 +33,10 @@ class AttachmentsController < ApplicationController
       dossier = DossierPreloader.load_one(champ.dossier, pj_template: true)
       # because preloader reassigns new champ instances champs, we have to reassign it
       @champ = dossier.champs.find { it.id == champ.id }
+    elsif champ_note?
+      @champ_note = record
+      @attachment.purge_later
+      @champ_note.documents.reload
     else
       @attachment.purge_later
       @attachment_options = attachment_options
@@ -55,6 +59,7 @@ class AttachmentsController < ApplicationController
     return if admin_changing_its_type_de_champ?
     return if expert_changing_its_avis?
     return if admin_changing_its_groupe_instructeur?
+    return if instructeur_changing_champ_note?
 
     head :not_found
   end
@@ -91,8 +96,13 @@ class AttachmentsController < ApplicationController
     avis? && current_expert == record.expert
   end
 
+  def instructeur_changing_champ_note?
+    champ_note? && current_user.instructeur? && current_instructeur.in?(record.champ.dossier.groupe_instructeur.instructeurs)
+  end
+
   def record = @attachment.record
   def champ? = record.is_a?(Champ)
+  def champ_note? = record.is_a?(ChampNote)
   def procedure? = record.is_a?(Procedure)
   def avis? = record.is_a?(Avis)
   def attestation_template? = record.is_a?(AttestationTemplate)

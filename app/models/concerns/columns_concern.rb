@@ -98,10 +98,10 @@ module ColumnsConcern
     end
 
     def default_sorted_column
-      SortedColumn.new(column: notifications_column, order: 'desc')
+      SortedColumn.new(column: depose_at_column, order: 'asc')
     end
 
-    def default_displayed_columns = [email_column]
+    def default_displayed_columns = [email_column, depose_at_column, linked_dossier_number_column, linked_dossier_state_column]
 
     def dossier_filterable_columns
       dossier_columns
@@ -138,6 +138,8 @@ module ColumnsConcern
     def groupe_instructeurs_id_column = dossier_col(table: 'groupe_instructeur', column: 'id', type: :enum)
 
     def followers_instructeurs_email_column = dossier_col(table: 'followers_instructeurs', column: 'email')
+
+    def depose_at_column = dossier_col(table: 'self', column: 'depose_at', type: :datetime)
 
     def dossier_archived_column = dossier_col(table: 'self', column: 'archived', type: :boolean, displayable: false, filterable: false);
 
@@ -182,6 +184,8 @@ module ColumnsConcern
       columns.concat(sva_svr_columns(for_export: false)) if sva_svr_enabled?
       columns.concat(dossier_non_displayable_dates_columns)
       columns.concat([Columns::ReadAgreementColumn.new(procedure_id: id)]) if accuse_lecture?
+      columns.concat([linked_dossier_number_column])
+      columns.concat([linked_dossier_state_column])
       columns
     end
 
@@ -235,6 +239,21 @@ module ColumnsConcern
 
     def types_de_champ_columns
       all_revisions_types_de_champ.flat_map { _1.columns(procedure: self) }
+    end
+
+    def linked_dossier_number_column
+      dossier_col(table: 'linked_dossier', column: 'public_dossier_number', type: :integer)
+    end
+
+    def linked_dossier_state_column
+      options = [
+        ['En construction', 'en_construction'],
+        ['En instruction', 'en_instruction'],
+        ['Accepté', 'accepte'],
+        ['Refusé', 'refuse'],
+        ['Sans suite', 'sans_suite'],
+      ]
+      dossier_col(table: 'linked_dossier', column: 'public_dossier_state', type: :enum, options_for_select: options)
     end
 
     def dossier_col(**args) = Columns::DossierColumn.new(**(args.merge(procedure_id: id)))

@@ -20,10 +20,10 @@ development:
 
 test:
   <<: *default
-  database: tps_test
+  database: gpp_test
   host: localhost
-  username: tps_test
-  password: tps_test
+  username: gpp_test
+  password: gpp_test
   port: <%= ENV["DB_PORT"] || 5432 %>
   # Workaround for https://github.com/ged/ruby-pg/issues/311
   gssencmode: disable

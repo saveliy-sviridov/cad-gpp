@@ -361,6 +361,70 @@ module Instructeurs
       end
     end
 
+    def update_public_champs
+      unless dossier.linked_dossier.present?
+        return head :forbidden
+      end
+      return head(:forbidden) if dossier.termine?
+
+      public_id, champ_attributes = champs_public_attributes_params.to_h.first
+      champ = dossier.public_champ_for_update(public_id, updated_by: current_user.email)
+      champ.assign_attributes(champ_attributes)
+      champ_changed = champ.changed_for_autosave?
+
+      if champ_changed && champ.save
+        champ.update_timestamps
+        dossier.index_search_terms_later
+      end
+
+      dossier.validate(:champs_public_value) if !champ.pending?
+
+      respond_to do |format|
+        format.turbo_stream do
+          @to_show, @to_hide, @to_update = champs_to_turbo_update(champs_public_attributes_params, dossier.project_champs_public_all)
+        end
+      end
+    end
+
+    def update_champ_note
+      return head(:forbidden) unless dossier.linked_dossier.present?
+      return head(:forbidden) if dossier.termine?
+
+      champ = find_public_champ_by_stable_id
+      champ_note = champ.champ_note || champ.build_champ_note
+      champ_note.body = params.dig(:champ_note, :body)
+      champ_note.save!
+
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "champ-note-#{champ.stable_id}",
+            partial: 'instructeurs/champ_notes/champ_note_form',
+            locals: { champ:, champ_note: }
+          )
+        end
+      end
+    end
+
+    def attach_champ_note_document
+      return head(:forbidden) unless dossier.linked_dossier.present?
+      return head(:forbidden) if dossier.termine?
+
+      champ = find_public_champ_by_stable_id
+      champ_note = champ.champ_note || champ.create_champ_note!
+      champ_note.documents.attach(params[:blob_signed_id])
+
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "champ-note-#{champ.stable_id}",
+            partial: 'instructeurs/champ_notes/champ_note_form',
+            locals: { champ:, champ_note: }
+          )
+        end
+      end
+    end
+
     def print
       @dossier = dossier
       render layout: "print"
@@ -519,6 +583,11 @@ module Instructeurs
       @dossier ||= DossierPreloader.load_one(dossier_scope.find(params[:dossier_id]), pj_template: true)
     end
 
+    def find_public_champ_by_stable_id
+      type_de_champ = dossier.find_type_de_champ_by_stable_id(params[:stable_id], :public)
+      dossier.champ_for_update(type_de_champ, row_id: nil, updated_by: current_user.email)
+    end
+
     def commentaire_params
       params.require(:commentaire).permit(:body, piece_jointe: [])
     end
@@ -560,6 +629,26 @@ module Instructeurs
 
     def champs_private_attributes_params
       champs_private_params.fetch(:champs_private_attributes)
+    end
+
+    def champs_public_params
+      champ_attributes = [
+        :id,
+        :value,
+        :value_other,
+        :external_id,
+        :code,
+        :primary_value,
+        :secondary_value,
+        value: [],
+      ]
+      public_ids = params.dig(:dossier, :champs_public_attributes)&.keys || []
+      champs_public_attributes = public_ids.index_with { champ_attributes }
+      params.require(:dossier).permit(champs_public_attributes:)
+    end
+
+    def champs_public_attributes_params
+      champs_public_params.fetch(:champs_public_attributes)
     end
 
     def mark_demande_as_read

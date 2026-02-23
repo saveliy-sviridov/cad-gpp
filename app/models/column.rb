@@ -40,6 +40,8 @@ class Column
   def dossier_labels? = [table, column] == ['dossier_labels', 'label_id']
   def email? = [table, column] == ['user', 'email']
   def avis? = [table, column] == ['avis', 'question_answer']
+  def linked_dossier_number? = [table, column] == ['linked_dossier', 'public_dossier_number']
+  def linked_dossier_state? = [table, column] == ['linked_dossier', 'public_dossier_state']
   def type_de_champ? = table == TYPE_DE_CHAMP_TABLE
 
   def self.find(h_id)

@@ -2,7 +2,7 @@
 
 class FAQsLoaderService
   PATH = Rails.root.join('doc', 'faqs').freeze
-  ORDER = ['usager', 'instructeur', 'administrateur'].freeze
+  ORDER = ['general', 'instructeur', 'administrateur'].freeze
 
   attr_reader :substitutions
 

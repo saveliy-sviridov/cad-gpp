@@ -81,9 +81,23 @@
                   %tbody
                     = render Dossiers::BatchSelectMoreComponent.new(dossiers_count: @dossiers_count, filtered_sorted_ids: @filtered_sorted_ids)
 
+                    - cse_separator_inserted = false
                     - @projected_dossiers.each do |dossier|
                       - path = instructeur_dossier_path(@procedure, dossier.id, statut: params[:statut])
-                      %tr{ class: class_names("file-hidden-by-user" => dossier.hidden_by_user_at.present?), id: "table-dossiers-row-#{dossier.id}", "aria-selected" => "false", "data-row-key" => dossier.id }
+                      - if @sorted_by_depose_at && @cse_cutoff_date && !cse_separator_inserted
+                        - dossier_date = dossier.depose_at&.to_date
+                        - if dossier_date.present?
+                          - cutoff_passed = @sort_ascending ? dossier_date > @cse_cutoff_date : dossier_date <= @cse_cutoff_date
+                          - if cutoff_passed
+                            - cse_separator_inserted = true
+                            - total_cols = 1 + @procedure_presentation.displayed_columns.size + 1 + 1 + (@procedure.sva_svr_enabled? ? 1 : 0) + (batch_operation_component.render? ? 1 : 0)
+                            %tr.cse-separator-row
+                              %td{ colspan: total_cols }
+                                .cse-separator
+                                  %span.cse-separator-label
+                                    = "CSE du #{I18n.l(@cse_date, format: :long)} — date limite de dépôt : #{I18n.l(@cse_cutoff_date, format: :long)}"
+                      - dossier_ineligible = @sorted_by_depose_at && @cse_cutoff_date && dossier.depose_at&.to_date.present? && dossier.depose_at.to_date > @cse_cutoff_date
+                      %tr{ class: class_names("file-hidden-by-user" => dossier.hidden_by_user_at.present?, "cse-ineligible" => dossier_ineligible), id: "table-dossiers-row-#{dossier.id}", "aria-selected" => "false", "data-row-key" => dossier.id }
                         - if batch_operation_component.render?
                           %th.fr-cell--fixed{ scope: 'row' }
                             .fr-checkbox-group.fr-checkbox-group--sm

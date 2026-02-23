@@ -5,7 +5,7 @@ module Administrateurs
     layout 'all', only: [:all, :administrateurs]
     respond_to :html, :xlsx
 
-    before_action :retrieve_procedure, only: [:show, :update, :champs, :annotations, :modifications, :edit, :zones, :monavis, :update_monavis, :accuse_lecture, :update_accuse_lecture, :publication, :publish, :transfert, :close, :confirmation, :allow_expert_review, :allow_expert_messaging, :experts_require_administrateur_invitation, :reset_draft, :publish_revision, :check_path, :api_champ_columns, :path, :update_path, :rdv, :update_rdv, :pro_connect_restricted, :update_pro_connect_restricted]
+    before_action :retrieve_procedure, only: [:show, :update, :champs, :annotations, :modifications, :edit, :zones, :monavis, :update_monavis, :accuse_lecture, :update_accuse_lecture, :publication, :publish, :transfert, :close, :confirmation, :allow_expert_review, :allow_expert_messaging, :experts_require_administrateur_invitation, :reset_draft, :publish_revision, :check_path, :api_champ_columns, :path, :update_path, :rdv, :update_rdv, :pro_connect_restricted, :update_pro_connect_restricted, :link_public_procedure, :unlink_public_procedure, :cse_calendar, :update_cse_calendar, :auto_sync, :update_auto_sync, :sync_public_dossiers]
     before_action :draft_valid?, only: [:apercu]
     after_action :reset_draft_procedure, only: [:update]
 
@@ -298,6 +298,106 @@ module Administrateurs
       redirect_to rdv_admin_procedure_path(@procedure)
     end
 
+    def cse_calendar
+      @cse_dates = @procedure.cse_dates
+    end
+
+    def update_cse_calendar
+      dates = params[:cse_dates].to_a.filter_map { |d| Date.parse(d) rescue nil }.uniq.sort
+      @procedure.cse_dates.destroy_all
+      dates.each { |d| @procedure.cse_dates.create!(date: d) }
+      flash.notice = "Le calendrier CSE a été mis à jour"
+      redirect_to admin_procedure_path(@procedure)
+    end
+
+    def auto_sync
+      @procedure_mirror = @procedure.procedure_mirror
+      frequency = @procedure_mirror&.auto_sync_frequency
+      @auto_sync_enabled = frequency.present?
+      if frequency.present?
+        if frequency >= 1440 && (frequency % 1440).zero?
+          @auto_sync_value = frequency / 1440
+          @auto_sync_unit = 'days'
+        elsif frequency >= 60 && (frequency % 60).zero?
+          @auto_sync_value = frequency / 60
+          @auto_sync_unit = 'hours'
+        else
+          @auto_sync_value = frequency
+          @auto_sync_unit = 'minutes'
+        end
+      else
+        @auto_sync_value = 30
+        @auto_sync_unit = 'minutes'
+      end
+    end
+
+    def update_auto_sync
+      mirror = @procedure.procedure_mirror
+      if mirror.nil?
+        flash[:alert] = "Cette démarche n'est pas liée à une démarche publique"
+        return redirect_to admin_procedure_path(@procedure)
+      end
+
+      if params[:auto_sync_enabled] == '1'
+        value = params[:auto_sync_value].to_i.clamp(1, 999)
+        unit = params[:auto_sync_unit]
+        frequency = case unit
+                    when 'hours' then value * 60
+                    when 'days' then value * 1440
+                    else value
+                    end
+      else
+        frequency = nil
+      end
+
+      mirror.update!(auto_sync_frequency: frequency)
+
+      if frequency.present?
+        SyncDossiersJob.set(wait: frequency.minutes).perform_later(@procedure.id)
+      end
+
+      flash[:notice] = "La configuration de synchronisation automatique a été mise à jour"
+      redirect_to admin_procedure_path(@procedure)
+    end
+
+    def sync_public_dossiers
+      mirror = @procedure.procedure_mirror
+
+      if mirror.nil?
+        flash[:alert] = "Cette démarche n'est pas liée à une démarche publique"
+        return redirect_to auto_sync_admin_procedure_path(@procedure)
+      end
+
+      api_token = ENV['PUBLIC_DS_API_TOKEN']
+      if api_token.blank?
+        flash[:alert] = "Token API de l'instance publique non configuré (PUBLIC_DS_API_TOKEN)"
+        return redirect_to auto_sync_admin_procedure_path(@procedure)
+      end
+
+      begin
+        service = PublicDossierSyncService.new(
+          public_instance_url: mirror.public_instance_url,
+          api_token: api_token
+        )
+        result = service.sync_dossiers(@procedure)
+
+        if result[:errors].any?
+          flash[:alert] = "Synchronisation partielle : #{result[:created]} créés, #{result[:updated]} mis à jour, #{result[:skipped]} inchangés. Erreurs : #{result[:errors].first(3).join(', ')}"
+        else
+          flash[:notice] = "Synchronisation terminée : #{result[:created]} créés, #{result[:updated]} mis à jour, #{result[:skipped]} inchangés"
+        end
+
+        mirror.update(last_synced_at: Time.current)
+      rescue PublicDossierSyncService::SyncError => e
+        flash[:alert] = "Erreur de synchronisation : #{e.message}"
+      rescue => e
+        Rails.logger.error("Sync error: #{e.message}\n#{e.backtrace.first(5).join("\n")}")
+        flash[:alert] = "Erreur inattendue : #{e.message}"
+      end
+
+      redirect_to auto_sync_admin_procedure_path(@procedure)
+    end
+
     def modifications
       ProcedureRevisionPreloader.new(@procedure.revisions.includes(administrateur: :user).reorder(published_at: :desc)).all
     end
@@ -487,6 +587,38 @@ module Administrateurs
       return redirect_to admin_procedure_path(params[:procedure_id]) if params[:procedure_id].present?
 
       redirect_to admin_procedures_path
+    end
+
+    def link_public_procedure
+      public_procedure_number = params[:public_procedure_number].to_i
+      public_instance_url = ENV.fetch('PUBLIC_DS_API_URL', 'https://www.demarches-simplifiees.fr')
+
+      if public_procedure_number <= 0
+        flash.alert = "Numéro de démarche invalide"
+        return redirect_to admin_procedure_path(@procedure)
+      end
+
+      mirror = @procedure.procedure_mirror || @procedure.build_procedure_mirror
+      mirror.public_instance_url = public_instance_url
+      mirror.public_procedure_number = public_procedure_number
+
+      if mirror.save
+        flash.notice = "Démarche liée à la démarche publique n°#{public_procedure_number}"
+      else
+        flash.alert = "Erreur lors de la liaison : #{mirror.errors.full_messages.join(', ')}"
+      end
+
+      redirect_to admin_procedure_path(@procedure)
+    end
+
+    def unlink_public_procedure
+      if @procedure.procedure_mirror&.destroy
+        flash.notice = "Liaison supprimée"
+      else
+        flash.alert = "Aucune liaison à supprimer"
+      end
+
+      redirect_to admin_procedure_path(@procedure)
     end
 
     private

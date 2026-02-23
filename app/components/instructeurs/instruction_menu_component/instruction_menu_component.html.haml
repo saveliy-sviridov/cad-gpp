@@ -2,15 +2,25 @@
   - menu.with_button_inner_html do
     = menu_label
 
-  - menu.with_item do
-    = link_to('#', onclick: "DS.showMotivation(event, 'accept');", role: 'menuitem') do
-      = dsfr_icon('fr-icon-checkbox-circle-fill fr-text-default--success')
-      .dropdown-description
-        %h4 Accepter
-        L’usager sera informé que son dossier a été accepté
+  - menu.with_item(class: accept_disabled ? "fr-background-contrast--grey" : nil) do
+    - if accept_disabled
+      %span.fr-btn--disabled{ role: 'menuitem', "aria-describedby" => "tooltip-accept-disabled" }
+        = dsfr_icon('fr-icon-checkbox-circle-fill fr-text-mention--grey')
+        .dropdown-description
+          %h4 Accepter
+          L'usager sera informé que son dossier a été accepté
+      %span#tooltip-accept-disabled.fr-tooltip.fr-placement{ role: :tooltip, "aria-hidden" => "true" }
+        Tous les champs de vérification doivent être cochés « Oui » avant d'accepter le dossier
+    - else
+      = link_to('#', onclick: "DS.showMotivation(event, 'accept');", role: 'menuitem') do
+        = dsfr_icon('fr-icon-checkbox-circle-fill fr-text-default--success')
+        .dropdown-description
+          %h4 Accepter
+          L'usager sera informé que son dossier a été accepté
 
-  - menu.with_item(class: "hidden inactive form-inside fr-pt-1v") do
-    = render partial: 'instructeurs/dossiers/instruction_button_motivation', locals: { dossier: dossier, placeholder: 'Expliquez au demandeur pourquoi ce dossier est accepté (facultatif)', popup_class: 'accept', process_action: 'accepter', title: 'Accepter', confirm: "Confirmez-vous l'acceptation ce dossier ?" }
+  - unless accept_disabled
+    - menu.with_item(class: "hidden inactive form-inside fr-pt-1v") do
+      = render partial: 'instructeurs/dossiers/instruction_button_motivation', locals: { dossier: dossier, placeholder: 'Expliquez au demandeur pourquoi ce dossier est accepté (facultatif)', popup_class: 'accept', process_action: 'accepter', title: 'Accepter', confirm: "Confirmez-vous l'acceptation ce dossier ?" }
 
   - menu.with_item do
     = link_to('#', onclick: "DS.showMotivation(event, 'without-continuation');", role: 'menuitem') do

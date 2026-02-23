@@ -1,0 +1,63 @@
+.cse-calendar-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  th {
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-mention-grey);
+  }
+
+  td {
+    text-align: center;
+    padding: 0.25rem;
+  }
+}
+
+.cse-calendar-day {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover:not(:disabled) {
+    background-color: var(--background-alt-grey);
+  }
+
+  &--selected {
+    background-color: var(--background-action-high-blue-france);
+    color: var(--text-inverted-grey);
+
+    &:hover:not(:disabled) {
+      background-color: var(--background-action-high-blue-france-hover);
+      color: var(--text-inverted-grey);
+    }
+  }
+
+  &--past {
+    color: var(--text-disabled-grey);
+    cursor: not-allowed;
+  }
+}
+
+.cse-dates-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cse-date-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-default-grey);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}

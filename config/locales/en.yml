@@ -405,6 +405,12 @@ en:
           requester_identity_updated_at: "updated on %{date}"
           individual_identity: "Your identity"
           form: "Form"
+          form_checklist: "Dossier verifications"
+          linked_dossier_title: "Linked dossier"
+          linked_dossier_link: "Link to the linked dossier"
+          linked_dossier_usager: "Requester"
+          linked_dossier_state: "Linked dossier state"
+          linked_dossier_state_unknown: "Unknown"
           edit_siret: "Edit SIRET"
           edit_identity: "Edit identity data"
           edit_identity_html: 'Edit identity <span aria-hidden="true"> data<span>'
@@ -979,6 +985,10 @@ en:
         generated_at: "Made on %{date},"
         signature: "%{app_name}"
   instructeurs:
+    champ_notes:
+      note_label: "Instructor note"
+      note_placeholder: "Add a note explaining your choice..."
+      attachments_label: "Attachments"
     dossiers:
       deleted_by_instructeur: "The folder has been deleted"
       impossible_deletion: "Unable to delete : the folder is not processed"

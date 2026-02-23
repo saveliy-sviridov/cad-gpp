@@ -48,6 +48,9 @@ class Procedure < ApplicationRecord
   has_many :replaced_procedures, -> { with_discarded }, inverse_of: :replaced_by_procedure, class_name: "Procedure",
   foreign_key: "replaced_by_procedure_id", dependent: :nullify
 
+  has_one :procedure_mirror, dependent: :destroy
+  has_many :cse_dates, -> { order(:date) }, dependent: :destroy
+
   has_one :module_api_carto, dependent: :destroy
   has_many :attestation_templates, dependent: :destroy
   has_one :attestation_template_v1, -> { AttestationTemplate.v1 }, dependent: :destroy, class_name: "AttestationTemplate", inverse_of: :procedure

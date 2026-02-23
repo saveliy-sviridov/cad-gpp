@@ -40,6 +40,29 @@
       - if @procedure.locked? && !@procedure.close?
         = link_to 'Clore', admin_procedure_close_path(procedure_id: @procedure.id), class: 'fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-calendar-close-fill', id: "close-procedure-link"
 
+.fr-container.fr-mb-3w
+  .fr-card.fr-card--no-border{ style: 'background-color: #f5f5fe; padding: 1rem;' }
+    .flex.justify-between.align-center
+      %div
+        %h3.fr-h6.fr-mb-1w
+          %span.fr-icon-link-unlink.fr-mr-1w
+          Liaison avec la démarche publique
+        - if @procedure.procedure_mirror.present?
+          %p.fr-mb-0
+            Liée à la démarche publique
+            %strong n°#{@procedure.procedure_mirror.public_procedure_number}
+            %a{ href: "#{@procedure.procedure_mirror.public_instance_url}/admin/procedures/#{@procedure.procedure_mirror.public_procedure_number}", target: "_blank", class: "fr-ml-1w" }
+              (voir)
+        - else
+          %p.fr-text--sm.fr-mb-0.fr-text-mention--grey Aucune liaison configurée
+      %div.flex.align-center.gap-2
+        - if @procedure.procedure_mirror.present?
+          = button_to 'Délier', unlink_public_procedure_admin_procedure_path(@procedure), method: :delete, class: 'fr-btn fr-btn--sm fr-btn--tertiary', data: { confirm: 'Supprimer la liaison avec la démarche publique ?' }
+        - else
+          = form_tag link_public_procedure_admin_procedure_path(@procedure), method: :patch, class: 'flex align-center gap-2' do
+            = number_field_tag :public_procedure_number, nil, class: 'fr-input fr-input--sm', placeholder: 'N° démarche', style: 'width: 120px;', min: 1, required: true
+            = submit_tag 'Lier', class: 'fr-btn fr-btn--sm'
+
 .fr-container
   = render Procedure::APIEntrepriseTokenExpirationAlertComponent.new(procedure: @procedure)
 
@@ -95,6 +118,8 @@
 
   %h3.fr-h6 Autres paramètres
   .fr-grid-row.fr-grid-row--gutters.fr-mb-5w
+    = render Procedure::Card::CseCalendarComponent.new(procedure: @procedure)
+    = render Procedure::Card::AutoSyncComponent.new(procedure: @procedure)
     = render Procedure::Card::AttestationComponent.new(procedure: @procedure, kind: AttestationTemplate.kinds.fetch(:acceptation))
     = render Procedure::Card::AttestationComponent.new(procedure: @procedure, kind: AttestationTemplate.kinds.fetch(:refus))
     = render Procedure::Card::ExpertsComponent.new(procedure: @procedure)

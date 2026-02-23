@@ -84,3 +84,6 @@ en:
             association_date_publication: 'Association date de publication'
           dossier_labels:
             label_id: Labels
+          linked_dossier:
+            public_dossier_number: "Linked dossier Nº"
+            public_dossier_state: "Linked dossier state"

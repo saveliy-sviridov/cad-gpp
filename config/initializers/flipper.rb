@@ -58,8 +58,12 @@ Flipper.configure do |config|
 end
 
 ActiveSupport.on_load(:active_record) do
-  if database_exists? && ActiveRecord::Base.connection.data_source_exists?('flipper_features')
-    setup_features(features)
+  begin
+    if database_exists? && ActiveRecord::Base.connection.data_source_exists?('flipper_features')
+      setup_features(features)
+    end
+  rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad
+    # Database doesn't exist yet (e.g. during db:create) — skip feature setup
   end
 end
 

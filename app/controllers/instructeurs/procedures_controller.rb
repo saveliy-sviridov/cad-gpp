@@ -193,6 +193,15 @@ module Instructeurs
       @projected_dossiers = DossierProjectionService.project(@filtered_sorted_paginated_ids, procedure_presentation.displayed_columns)
       @disable_checkbox_all = @projected_dossiers.all? { _1.batch_operation_id.present? }
 
+      sorted_col = procedure_presentation.sorted_column.column
+      @sorted_by_depose_at = sorted_col.table == 'self' && sorted_col.column == 'depose_at'
+      if @sorted_by_depose_at
+        next_cse = @procedure.cse_dates.where('date > ?', Date.current).first
+        @cse_cutoff_date = next_cse&.date&.- 14.days
+        @cse_date = next_cse&.date
+        @sort_ascending = procedure_presentation.sorted_column.ascending?
+      end
+
       @batch_operations = BatchOperation.joins(:groupe_instructeurs)
         .where(groupe_instructeurs: current_instructeur.groupe_instructeurs.where(procedure_id: @procedure.id))
         .where(seen_at: nil)
@@ -386,6 +395,45 @@ module Instructeurs
         .where.not(published_at: nil)
         .reorder(published_at: :desc)
       @instructeur_procedure = find_or_create_instructeur_procedure(@procedure)
+    end
+
+    def sync_public_dossiers
+      @procedure = procedure
+      mirror = @procedure.procedure_mirror
+
+      if mirror.nil?
+        flash[:alert] = "Cette démarche n'est pas liée à une démarche publique"
+        return redirect_to instructeur_procedure_path(@procedure)
+      end
+
+      api_token = ENV['PUBLIC_DS_API_TOKEN']
+      if api_token.blank?
+        flash[:alert] = "Token API de l'instance publique non configuré (PUBLIC_DS_API_TOKEN)"
+        return redirect_to instructeur_procedure_path(@procedure)
+      end
+
+      begin
+        service = PublicDossierSyncService.new(
+          public_instance_url: mirror.public_instance_url,
+          api_token: api_token
+        )
+        result = service.sync_dossiers(@procedure)
+
+        if result[:errors].any?
+          flash[:alert] = "Synchronisation partielle : #{result[:created]} créés, #{result[:updated]} mis à jour, #{result[:skipped]} inchangés. Erreurs : #{result[:errors].first(3).join(', ')}"
+        else
+          flash[:notice] = "Synchronisation terminée : #{result[:created]} créés, #{result[:updated]} mis à jour, #{result[:skipped]} inchangés"
+        end
+
+        mirror.update(last_synced_at: Time.current)
+      rescue PublicDossierSyncService::SyncError => e
+        flash[:alert] = "Erreur de synchronisation : #{e.message}"
+      rescue => e
+        Rails.logger.error("Sync error: #{e.message}\n#{e.backtrace.first(5).join("\n")}")
+        flash[:alert] = "Erreur inattendue : #{e.message}"
+      end
+
+      redirect_to instructeur_procedure_path(@procedure)
     end
 
     private

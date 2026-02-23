@@ -5,4 +5,4 @@ then
   echo "You need to install overmind. https://github.com/DarthSim/overmind#installation"
 fi
 
-OVERMIND_SKIP_ENV=true overmind start -f Procfile.dev "$@"
+OVERMIND_SKIP_ENV=true OVERMIND_SOCKET=/tmp/overmind-gpp.sock overmind start -f Procfile.dev "$@"

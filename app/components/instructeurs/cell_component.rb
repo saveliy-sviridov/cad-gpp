@@ -21,6 +21,16 @@ class Instructeurs::CellComponent < ApplicationComponent
       tags_label(@dossier.labels)
     elsif @column.avis?
       sum_up_avis(@dossier.avis)
+    elsif @column.linked_dossier_number?
+      linked = @dossier.linked_dossier
+      if linked&.public_dossier_number.present?
+        link_to(linked.public_dossier_number, linked.public_dossier_url, target: "_blank", rel: "noopener", class: "fr-link")
+      end
+    elsif @column.linked_dossier_state?
+      linked = @dossier.linked_dossier
+      if linked&.public_dossier_state.present?
+        link_to(status_badge(linked.public_dossier_state), linked.public_dossier_url, target: "_blank", rel: "noopener")
+      end
     end
   end
 
@@ -76,7 +86,7 @@ class Instructeurs::CellComponent < ApplicationComponent
   end
 
   def email_and_tiers(dossier)
-    email = dossier&.user&.email || dossier.user_email_for(:display)
+    email = dossier.linked_dossier&.usager_email.presence || dossier&.user&.email || dossier.user_email_for(:display)
 
     if dossier.for_tiers
       prenom, nom = dossier&.individual&.prenom, dossier&.individual&.nom

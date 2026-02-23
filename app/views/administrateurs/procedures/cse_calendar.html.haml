@@ -1,0 +1,45 @@
+= render partial: 'administrateurs/breadcrumbs',
+  locals: { steps: [['Démarches', admin_procedures_back_path(@procedure)],
+                    [@procedure.libelle.truncate_words(10), admin_procedure_path(@procedure)],
+                    ['Calendrier CSE']] }
+
+.fr-container
+  %h1.fr-h2 Calendrier CSE
+
+  %p
+    Définissez les dates des prochains Comités Sociaux et Économiques (CSE).
+    Les dossiers doivent être déposés au moins 2 semaines avant la date du CSE pour être étudiés lors de cette session.
+
+  = form_tag cse_calendar_admin_procedure_path(@procedure), method: :patch, id: 'cse-calendar-form' do
+    .fr-grid-row.fr-grid-row--gutters{ data: { controller: 'cse-calendar', 'cse-calendar-dates-value': @cse_dates.map { |d| d.date.to_s }.to_json } }
+      .fr-col-12.fr-col-md-6
+        .fr-card.fr-card--no-border
+          .fr-card__body.fr-p-3w
+            .flex.justify-between.align-center.fr-mb-2w
+              %button.fr-btn.fr-btn--tertiary.fr-btn--sm.fr-icon-arrow-left-s-line{ type: 'button', data: { action: 'cse-calendar#previousMonth' }, title: 'Mois précédent' }
+              %h2.fr-h6.fr-mb-0{ data: { 'cse-calendar-target': 'monthLabel' } }
+              %button.fr-btn.fr-btn--tertiary.fr-btn--sm.fr-icon-arrow-right-s-line{ type: 'button', data: { action: 'cse-calendar#nextMonth' }, title: 'Mois suivant' }
+            %div{ data: { 'cse-calendar-target': 'calendar' } }
+
+      .fr-col-12.fr-col-md-6
+        .fr-card.fr-card--no-border
+          .fr-card__body.fr-p-3w
+            %h2.fr-h6 Dates des CSE
+            %div{ data: { 'cse-calendar-target': 'datesList' } }
+
+      %div{ data: { 'cse-calendar-target': 'hiddenInputs' }, hidden: true }
+
+- content_for(:footer) do
+  &nbsp;
+
+.padded-fixed-footer
+  .fixed-footer
+    .fr-container
+      .fr-grid-row
+        .fr-col-12
+          %ul.fr-btns-group.fr-btns-group--inline-md
+            %li
+              = link_to admin_procedure_path(id: @procedure), class: 'fr-btn fr-btn--secondary', data: { confirm: 'Si vous avez fait des modifications elles ne seront pas sauvegardées.' } do
+                Annuler et revenir à l'écran de gestion
+            %li
+              %button.fr-btn{ type: 'submit', form: 'cse-calendar-form' } Enregistrer

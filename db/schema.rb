@@ -10,14 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
+ActiveRecord::Schema[7.2].define(version: 2026_02_18_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_buffercache"
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "postgis"
-  disable_extension "postgis_tiger_geocoder"
   enable_extension "sslinfo"
   enable_extension "unaccent"
 
@@ -245,6 +244,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "champ_notes", force: :cascade do |t|
+    t.text "body"
+    t.bigint "champ_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["champ_id"], name: "index_champ_notes_on_champ_id", unique: true
+  end
+
   create_table "champs", id: :serial, force: :cascade do |t|
     t.datetime "created_at", precision: nil
     t.jsonb "data"
@@ -341,6 +348,14 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
     t.datetime "updated_at", null: false
     t.index ["groupe_instructeur_id", "nom"], name: "index_contact_informations_on_gi_and_nom", unique: true
     t.index ["groupe_instructeur_id"], name: "index_contact_informations_on_groupe_instructeur_id"
+  end
+
+  create_table "cse_dates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.bigint "procedure_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["procedure_id"], name: "index_cse_dates_on_procedure_id"
   end
 
   create_table "default_zones_administrateurs", id: false, force: :cascade do |t|
@@ -907,6 +922,22 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
     t.index ["procedure_id"], name: "index_labels_on_procedure_id"
   end
 
+  create_table "linked_dossiers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "dossier_id", null: false
+    t.string "public_dossier_graphql_id"
+    t.integer "public_dossier_number", null: false
+    t.string "public_dossier_state"
+    t.string "public_instance_url", null: false
+    t.datetime "updated_at", null: false
+    t.string "usager_civilite"
+    t.string "usager_email"
+    t.string "usager_nom"
+    t.string "usager_prenom"
+    t.index ["dossier_id"], name: "index_linked_dossiers_on_dossier_id", unique: true
+    t.index ["public_instance_url", "public_dossier_number"], name: "index_linked_dossiers_on_url_and_number"
+  end
+
   create_table "llm_rule_suggestion_items", force: :cascade do |t|
     t.datetime "applied_at"
     t.datetime "created_at", null: false
@@ -975,6 +1006,18 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
     t.index ["procedure_id"], name: "index_module_api_cartos_on_procedure_id", unique: true
   end
 
+  create_table "procedure_mirrors", force: :cascade do |t|
+    t.integer "auto_sync_frequency"
+    t.datetime "created_at", null: false
+    t.datetime "last_synced_at"
+    t.bigint "procedure_id", null: false
+    t.string "public_instance_url", null: false
+    t.string "public_procedure_graphql_id"
+    t.integer "public_procedure_number", null: false
+    t.datetime "updated_at", null: false
+    t.index ["procedure_id"], name: "index_procedure_mirrors_on_procedure_id"
+  end
+
   create_table "procedure_paths", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "path"
@@ -990,11 +1033,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
     t.integer "assign_to_id"
     t.datetime "created_at", precision: nil
     t.jsonb "displayed_columns", default: [], null: false, array: true
-    t.jsonb "displayed_fields", default: [{"label"=>"Demandeur", "table"=>"user", "column"=>"email"}], null: false
+    t.jsonb "displayed_fields", default: [{"label" => "Demandeur", "table" => "user", "column" => "email"}], null: false
     t.jsonb "expirant_filters", default: [], null: false, array: true
-    t.jsonb "filters", default: {"tous"=>[], "suivis"=>[], "traites"=>[], "a-suivre"=>[], "archives"=>[], "expirant"=>[], "supprimes"=>[]}, null: false
+    t.jsonb "filters", default: {"tous" => [], "suivis" => [], "traites" => [], "a-suivre" => [], "archives" => [], "expirant" => [], "supprimes" => []}, null: false
     t.boolean "filters_expanded", default: true, null: false
-    t.jsonb "sort", default: {"order"=>"desc", "table"=>"notifications", "column"=>"notifications"}, null: false
+    t.jsonb "sort", default: {"order" => "desc", "table" => "notifications", "column" => "notifications"}, null: false
     t.jsonb "sorted_column"
     t.jsonb "suivis_filters", default: [], null: false, array: true
     t.jsonb "supprimes_filters", default: [], null: false, array: true
@@ -1461,6 +1504,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
   add_foreign_key "avis", "experts_procedures"
   add_foreign_key "batch_operations", "instructeurs"
   add_foreign_key "bulk_messages", "procedures"
+  add_foreign_key "champ_notes", "champs"
   add_foreign_key "champs", "dossiers"
   add_foreign_key "champs", "etablissements"
   add_foreign_key "champs", "types_de_champ"
@@ -1470,6 +1514,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
   add_foreign_key "commentaires", "instructeurs"
   add_foreign_key "contact_forms", "users"
   add_foreign_key "contact_informations", "groupe_instructeurs"
+  add_foreign_key "cse_dates", "procedures"
   add_foreign_key "dossier_assignments", "dossiers"
   add_foreign_key "dossier_batch_operations", "batch_operations"
   add_foreign_key "dossier_batch_operations", "dossiers"
@@ -1505,9 +1550,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_084441) do
   add_foreign_key "instructeurs_procedures", "instructeurs"
   add_foreign_key "instructeurs_procedures", "procedures"
   add_foreign_key "labels", "procedures"
+  add_foreign_key "linked_dossiers", "dossiers"
   add_foreign_key "llm_rule_suggestion_items", "llm_rule_suggestions"
   add_foreign_key "llm_rule_suggestions", "procedure_revisions"
   add_foreign_key "merge_logs", "users"
+  add_foreign_key "procedure_mirrors", "procedures"
   add_foreign_key "procedure_paths", "procedures"
   add_foreign_key "procedure_presentations", "assign_tos"
   add_foreign_key "procedure_revision_types_de_champ", "procedure_revision_types_de_champ", column: "parent_id"

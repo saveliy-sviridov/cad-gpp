@@ -9,5 +9,5 @@
         %p.champ-blank= blank
 
   - else
-    %dd.champ-content.copy-zone{ class: content_class }
+    %dd.champ-content{ class: class_names(content_class, 'copy-zone': @copyable) }
       = value

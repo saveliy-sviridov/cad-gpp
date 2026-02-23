@@ -1,0 +1,66 @@
+= render partial: 'administrateurs/breadcrumbs',
+  locals: { steps: [['Démarches', admin_procedures_back_path(@procedure)],
+                    [@procedure.libelle.truncate_words(10), admin_procedure_path(@procedure)],
+                    ['Synchronisation']] }
+
+.fr-container
+  %h1.fr-h2 Synchronisation des dossiers
+
+  .fr-grid-row.fr-grid-row--gutters
+    .fr-col-12.fr-col-md-6
+      .fr-card.fr-card--no-border
+        .fr-card__body.fr-p-3w
+          %h2.fr-h6 Synchronisation manuelle
+          %p.fr-text--sm.fr-mb-2w
+            Récupérez immédiatement les dossiers depuis la plateforme publique.
+          - if @procedure_mirror.present?
+            - if @procedure_mirror.last_synced_at.present?
+              %p.fr-text--sm.fr-mb-2w
+                Dernière synchronisation :
+                %strong= l(@procedure_mirror.last_synced_at, format: :long)
+            = button_to sync_public_dossiers_admin_procedure_path(@procedure), method: :post, class: "fr-btn fr-btn--secondary" do
+              %span.fr-icon-refresh-line{ "aria-hidden": "true" }
+              Synchroniser maintenant
+          - else
+            %p.fr-hint-text
+              La démarche doit être liée à une démarche publique pour pouvoir synchroniser.
+
+    .fr-col-12.fr-col-md-6
+      .fr-card.fr-card--no-border
+        .fr-card__body.fr-p-3w
+          %h2.fr-h6 Synchronisation automatique
+          %p.fr-text--sm.fr-mb-2w
+            Configurez la fréquence à laquelle les dossiers sont automatiquement récupérés.
+
+          = form_tag auto_sync_admin_procedure_path(@procedure), method: :patch, id: 'auto-sync-form', data: { controller: 'auto-sync' } do
+            .fr-fieldset
+              .fr-fieldset__element
+                .fr-checkbox-group
+                  = check_box_tag :auto_sync_enabled, '1', @auto_sync_enabled, id: 'auto-sync-enabled', data: { action: 'change->auto-sync#toggleEnabled' }
+                  %label.fr-label{ for: 'auto-sync-enabled' } Activer la synchronisation automatique
+
+              %div{ class: (@auto_sync_enabled ? '' : 'hidden'), data: { 'auto-sync-target': 'frequencyFields' } }
+                %label.fr-label.fr-mt-2w{ for: 'auto-sync-value' } Fréquence
+                .flex.align-center.fr-mt-1w{ style: 'gap: 0.5rem' }
+                  .fr-input-group.fr-mb-0{ style: 'max-width: 6rem' }
+                    = number_field_tag :auto_sync_value, @auto_sync_value, min: 1, max: 999, class: 'fr-input', id: 'auto-sync-value'
+                  .fr-select-group.fr-mb-0{ style: 'max-width: 10rem' }
+                    = select_tag :auto_sync_unit, options_for_select([['minutes', 'minutes'], ['heures', 'hours'], ['jours', 'days']], @auto_sync_unit), class: 'fr-select', id: 'auto-sync-unit'
+
+          %p.fr-hint-text.fr-mt-2w
+            La synchronisation automatique nécessite que la démarche soit liée à une démarche publique et qu'un token API soit configuré.
+
+- content_for(:footer) do
+  &nbsp;
+
+.padded-fixed-footer
+  .fixed-footer
+    .fr-container
+      .fr-grid-row
+        .fr-col-12
+          %ul.fr-btns-group.fr-btns-group--inline-md
+            %li
+              = link_to admin_procedure_path(id: @procedure), class: 'fr-btn fr-btn--secondary', data: { confirm: 'Si vous avez fait des modifications elles ne seront pas sauvegardées.' } do
+                Annuler et revenir à l'écran de gestion
+            %li
+              %button.fr-btn{ type: 'submit', form: 'auto-sync-form' } Enregistrer

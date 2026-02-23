@@ -1,0 +1,35 @@
+- readonly = local_assigns.fetch(:readonly, false)
+- note_url = champ_note_instructeur_dossier_path(champ.dossier.procedure, champ.dossier, stable_id: champ.stable_id)
+- doc_url = champ_note_document_instructeur_dossier_path(champ.dossier.procedure, champ.dossier, stable_id: champ.stable_id)
+
+- if readonly
+  .champ-note.fr-fieldset__element.fr-mt-2w{ id: "champ-note-#{champ.stable_id}" }
+    .fr-input-group
+      %label.fr-label= t('instructeurs.champ_notes.note_label')
+      - if champ_note&.body.present?
+        %p.fr-text--sm.fr-mb-0= champ_note.body
+
+    - if champ_note&.persisted? && champ_note.documents.attached?
+      .fr-mt-1w
+        %label.fr-label= t('instructeurs.champ_notes.attachments_label')
+        - champ_note.documents.each do |document|
+          .fr-mb-1v
+            = render Attachment::ShowComponent.new(attachment: document)
+
+- else
+  .champ-note.fr-fieldset__element.fr-mt-2w{ id: "champ-note-#{champ.stable_id}", data: { controller: 'champ-note', 'champ-note-url-value': note_url } }
+    .fr-input-group
+      %label.fr-label{ for: "champ-note-body-#{champ.stable_id}" }
+        = t('instructeurs.champ_notes.note_label')
+      %textarea.fr-input{ id: "champ-note-body-#{champ.stable_id}", rows: 2, placeholder: t('instructeurs.champ_notes.note_placeholder'), data: { 'champ-note-target': 'textarea', action: 'input->champ-note#onInput' } }
+        = champ_note&.body
+
+    - if champ_note&.persisted? && champ_note.documents.attached?
+      .fr-mt-1w
+        %label.fr-label= t('instructeurs.champ_notes.attachments_label')
+        - champ_note.documents.each do |document|
+          .fr-mb-1v{ id: dom_id(document) }
+            = render Attachment::EditComponent.new(attached_file: champ_note.documents, attachment: document, auto_attach_url: doc_url, user_can_destroy: true, direct_upload: true)
+
+    .fr-mt-1w
+      = render Attachment::EditComponent.new(attached_file: champ_note&.persisted? ? champ_note.documents : ChampNote.new.documents, auto_attach_url: doc_url, user_can_destroy: true, direct_upload: true)

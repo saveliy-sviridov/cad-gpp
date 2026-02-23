@@ -2,3 +2,8 @@
 
 - @notifications_sticker.keys.each do |label|
   = turbo_stream.replace "notification-sticker-#{label.to_s}", partial: 'shared/notification_sticker', locals: { label: label.to_s, notification: @notifications_sticker[label] }
+
+- if @dossier.linked_dossier.present?
+  = turbo_stream.replace 'checklist-section' do
+    #checklist-section
+      = render partial: 'shared/dossiers/checklist', locals: { dossier: @dossier, demande_seen_at: nil, profile: 'instructeur' }

@@ -410,6 +410,12 @@ fr:
           requester_identity_updated_at: "modifiée le %{date}"
           individual_identity: "Votre identité"
           form: "Sections du formulaire"
+          form_checklist: "Vérifications du dossier"
+          linked_dossier_title: "Dossier lié"
+          linked_dossier_link: "Lien vers le dossier lié"
+          linked_dossier_usager: "Demandeur"
+          linked_dossier_state: "État du dossier lié"
+          linked_dossier_state_unknown: "Inconnu"
           edit_siret: "Modifier le SIRET"
           edit_identity: "Modifier l’identité"
           edit_identity_html: 'Modifier <span aria-hidden="true"> l’identité</span>'
@@ -980,6 +986,10 @@ fr:
         reason_automatic: "Il a été supprimé car son délai maximal de conservation a été atteint."
         history_link_html: "Vous pouvez retrouver l'ensemble des dossiers supprimés de votre compte (hors \"BROUILLON\") sur la page <a href=\"%{history_link}\" class=\"fr-link\">Historique des dossiers supprimés</a>."
   instructeurs:
+    champ_notes:
+      note_label: "Note de l'instructeur"
+      note_placeholder: "Ajoutez une note justifiant votre choix..."
+      attachments_label: "Pièces jointes"
     dossiers:
       deleted_by_instructeur: "Le dossier a bien été supprimé de votre interface"
       impossible_deletion: "Supression impossible : le dossier n’est pas traité"

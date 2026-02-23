@@ -19,6 +19,7 @@ user = User.create!(
   email_verified_at: Time.zone.now
 )
 user.create_instructeur!
+user.instructeur.update!(bypass_email_login_token: true)
 user.create_administrateur!
 
 user_fixer = User.create(email: ENV.fetch('DEFAULT_INSTRUCTEUR_EMAIL') { CONTACT_EMAIL },

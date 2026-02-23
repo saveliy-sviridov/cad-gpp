@@ -17,6 +17,8 @@ class Columns::DossierColumn < Column
       dossier.followers_instructeurs.map(&:email).join(' ')
     when 'traitements'
       dossier.traitements.map(&:instructeur_email).join(' ')
+    when 'linked_dossier'
+      dossier.linked_dossier&.public_send(column)
     end
   end
 
@@ -108,6 +110,10 @@ class Columns::DossierColumn < Column
       dossiers
         .joins(:dossier_notifications)
         .where(dossier_notifications: { notification_type: values })
+    when 'linked_dossier'
+      dossiers
+        .joins(:linked_dossier)
+        .where(linked_dossiers: { column => values })
     end.ids
   end
 end

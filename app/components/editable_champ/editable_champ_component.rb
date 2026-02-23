@@ -42,6 +42,10 @@ class EditableChamp::EditableChampComponent < ApplicationComponent
     end
   end
 
+  def show_champ_note?
+    @champ.yes_no? && @champ.public? && @champ.dossier.linked_dossier.present?
+  end
+
   private
 
   def has_label?(champ)

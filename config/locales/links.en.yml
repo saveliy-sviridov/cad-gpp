@@ -7,12 +7,12 @@ en:
         label: "FAQ"
         title: "Frequently Asked Questions"
         url: "/faq"
-        autosave_url: "/faq/usager/je-veux-enregistrer-mon-formulaire-pour-le-reprendre-plus-tard"
-        comment_trouver_ma_demarche_url: "/faq/usager/comment-trouver-ma-demarche"
-        confirmer_compte_chaque_connexion_url: "/faq/instructeur/je-dois-confirmer-mon-compte-a-chaque-connexion"
-        contacter_service_en_charge_url: "/faq/usager/je-veux-contacter-le-service-en-charge-de-ma-demarche"
-        erreur_siret_url: "/faq/usager/erreur-siret-lors-d-un-depot-de-dossier"
-        ou_en_est_mon_dossier_url: "/faq/usager/je-veux-savoir-ou-en-est-l-instruction-de-ma-demarche"
+        autosave_url: "/faq"
+        comment_trouver_ma_demarche_url: "/faq"
+        confirmer_compte_chaque_connexion_url: "/faq"
+        contacter_service_en_charge_url: "/faq"
+        erreur_siret_url: "/faq"
+        ou_en_est_mon_dossier_url: "/faq"
     footer:
       top_labels:
         hidden_title: Useful links

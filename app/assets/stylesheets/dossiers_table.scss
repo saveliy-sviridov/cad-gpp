@@ -26,6 +26,31 @@
   }
 }
 
+.cse-separator-row {
+  td {
+    padding: 0 !important;
+    border: none !important;
+  }
+}
+
+.cse-separator {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: var(--background-action-high-blue-france);
+  color: var(--text-inverted-grey);
+}
+
+.cse-separator-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cse-ineligible {
+  opacity: 0.45;
+}
+
 .file-hidden-by-user {
   background-color: rgba(242, 137, 0, 0.6);
 

@@ -558,10 +558,13 @@ Rails.application.routes.draw do
             get 'telecharger_pjs' => 'dossiers#telecharger_pjs'
             get 'print' => 'dossiers#print'
             patch 'annotations' => 'dossiers#update_annotations'
+            patch 'public_champs' => 'dossiers#update_public_champs'
             get 'annotations/:stable_id', to: 'dossiers#annotation', as: :annotation
             get 'geo_data'
             get 'apercu_attestation'
             get 'bilans_bdf'
+            patch 'champ_notes/:stable_id' => 'dossiers#update_champ_note', as: :champ_note
+            put 'champ_notes/:stable_id/documents' => 'dossiers#attach_champ_note_document', as: :champ_note_document
           end
         end
 
@@ -590,6 +593,7 @@ Rails.application.routes.draw do
         get 'stats'
         get 'exports'
         get 'export_templates'
+        post 'sync_public_dossiers'
         get 'notification_preferences'
         get 'administrateurs'
         get 'history', as: :procedure_history
@@ -670,11 +674,18 @@ Rails.application.routes.draw do
         patch 'rdv', to: 'procedures#update_rdv'
         get 'pro_connect_restricted'
         patch 'pro_connect_restricted', to: 'procedures#update_pro_connect_restricted'
+        get 'cse_calendar'
+        patch 'cse_calendar', to: 'procedures#update_cse_calendar'
+        get 'auto_sync'
+        patch 'auto_sync', to: 'procedures#update_auto_sync'
+        post 'sync_public_dossiers'
         put :allow_expert_review
         put :allow_expert_messaging
         put :experts_require_administrateur_invitation
         put :restore
         get 'api_champ_columns'
+        patch :link_public_procedure
+        delete :unlink_public_procedure
       end
 
       get 'jetons', to: 'jetons#index'

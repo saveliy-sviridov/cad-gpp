@@ -12,6 +12,7 @@ class Champ < ApplicationRecord
 
   belongs_to :dossier, inverse_of: false, touch: true, optional: false
   has_many_attached :piece_justificative_file
+  has_one :champ_note, dependent: :destroy
 
   # We declare champ specific relationships (Champs::CarteChamp, Champs::SiretChamp and Champs::RepetitionChamp)
   # here because otherwise we can't easily use includes in our queries.

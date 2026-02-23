@@ -16,9 +16,9 @@ jobs:
       postgres:
         image: postgis/postgis:17-3.5
         env:
-          POSTGRES_USER: tps_test
-          POSTGRES_DB: tps_test
-          POSTGRES_PASSWORD: tps_test
+          POSTGRES_USER: gpp_test
+          POSTGRES_DB: gpp_test
+          POSTGRES_PASSWORD: gpp_test
         ports: [ "5432:5432" ]
 
     steps:
@@ -63,9 +63,9 @@ jobs:
       postgres:
         image: postgis/postgis:17-3.5
         env:
-          POSTGRES_USER: tps_test
-          POSTGRES_DB: tps_test
-          POSTGRES_PASSWORD: tps_test
+          POSTGRES_USER: gpp_test
+          POSTGRES_DB: gpp_test
+          POSTGRES_PASSWORD: gpp_test
         ports: ["5432:5432"]
       redis:
         image: redis:7-alpine
@@ -116,9 +116,9 @@ jobs:
       postgres:
         image: postgis/postgis:17-3.5
         env:
-          POSTGRES_USER: tps_test
-          POSTGRES_DB: tps_test
-          POSTGRES_PASSWORD: tps_test
+          POSTGRES_USER: gpp_test
+          POSTGRES_DB: gpp_test
+          POSTGRES_PASSWORD: gpp_test
         ports: ["5432:5432"]
       redis:
         image: redis:7-alpine
@@ -159,9 +159,9 @@ jobs:
       postgres:
         image: postgis/postgis:17-3.5
         env:
-          POSTGRES_USER: tps_test
-          POSTGRES_DB: tps_test
-          POSTGRES_PASSWORD: tps_test
+          POSTGRES_USER: gpp_test
+          POSTGRES_DB: gpp_test
+          POSTGRES_PASSWORD: gpp_test
         ports: ["5432:5432"]
       redis:
         image: redis:7-alpine

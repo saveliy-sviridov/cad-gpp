@@ -1,0 +1,5 @@
+= render partial: 'shared/dossiers/update_champs', locals: { to_show: @to_show, to_hide: @to_hide, to_update: @to_update, dossier: nil }
+
+= turbo_stream.replace 'instruction-menu' do
+  %li.instruction-button#instruction-menu
+    = render Instructeurs::InstructionMenuComponent.new(dossier: @dossier)

@@ -91,3 +91,6 @@ fr:
             label_id: Labels
           dossier_notifications:
             notification_type: Notifications sur le dossier
+          linked_dossier:
+            public_dossier_number: "N° dossier lié"
+            public_dossier_state: "État du dossier lié"

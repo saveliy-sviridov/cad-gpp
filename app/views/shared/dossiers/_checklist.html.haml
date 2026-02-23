@@ -1,0 +1,16 @@
+- types_de_champ = dossier.revision.types_de_champ_public
+- is_checklist = profile == 'instructeur' && dossier.linked_dossier.present?
+
+%h2.fr-h6.fr-background-alt--grey.fr-mb-0.flex
+  .flex-grow.fr-py-3v.fr-px-2w= is_checklist ? t('views.shared.dossiers.demande.form_checklist') : t('views.shared.dossiers.demande.form')
+
+%dl.fr-pl-0.fr-mt-2w.fr-mb-4w
+  - if types_de_champ.any? || dossier.procedure.routing_enabled?
+    - if is_checklist && !dossier.termine?
+      = render NestedForms::FormOwnerComponent.new
+      = form_for dossier, url: public_champs_instructeur_dossier_path(dossier.procedure, dossier), html: { class: 'form', multipart: true } do |f|
+        %fieldset.fr-fieldset= render EditableChamp::SectionComponent.new(dossier:, types_de_champ:)
+    - elsif is_checklist && dossier.termine?
+      = render ViewableChamp::SectionComponent.new(dossier:, types_de_champ:, demande_seen_at:, profile:)
+    - else
+      = render ViewableChamp::SectionComponent.new(dossier:, types_de_champ:, demande_seen_at:, profile:)

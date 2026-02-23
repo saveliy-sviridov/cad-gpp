@@ -2,6 +2,9 @@
   = fields_for @champ.input_name, @champ do |form|
     = turbo_stream.replace @champ.input_group_id do
       = render EditableChamp::EditableChampComponent.new champ: @champ, form: form
+- elsif @champ_note
+  = turbo_stream.replace "champ-note-#{@champ_note.champ.stable_id}" do
+    = render partial: 'instructeurs/champ_notes/champ_note_form', locals: { champ: @champ_note.champ, champ_note: @champ_note }
 - else
   = turbo_stream.replace dom_id(@attachment, :edit) do
     = render Attachment::EditComponent.new(**@attachment_options)
