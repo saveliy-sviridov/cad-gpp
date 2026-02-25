@@ -1,0 +1,172 @@
+name: gestionnaire-processus-projet
+
+# GPP — Gestionnaire des Processus Projets
+#
+# Services:
+#   postgres   — PostgreSQL 17 database
+#   redis      — Redis (ActionCable / WebSocket support)
+#   weasyprint — PDF generation server
+#   app        — Rails web server
+#   worker     — delayed_job background worker
+#
+# Quick start:
+#   1. Copy config/env.example to .env and fill in the required values.
+#   2. docker compose up --build
+#
+# Required variables in .env (no defaults):
+#   SECRET_KEY_BASE            — generate with: docker compose run --rm app bin/rails secret
+#   INVISIBLE_CAPTCHA_SECRET   — any random string
+#   DB_PASSWORD                — database password
+#   APP_HOST                   — host:port visible to users (e.g. gpp.example.org)
+#
+# GPP-specific variables (optional — needed to link to the public platform):
+#   PUBLIC_DS_API_URL          — URL of the public demarches platform
+#   PUBLIC_DS_API_TOKEN        — API token for that platform
+
+services:
+  # Infrastructure
+  postgres:
+    image: postgis/postgis:17-3.5-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-gpp_production}
+      POSTGRES_USER: ${DB_USERNAME:-gpp}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-gpp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 3600 1 --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  # weasyprint:
+  #   image: ghcr.io/demarches-simplifiees/weasyprint_server:main
+  #   restart: unless-stopped
+
+  # Application
+  app:
+    build: .
+    image: ${IMAGE:-gpp}:${TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    # Allows containers to reach services running on the host (e.g. PUBLIC_DS_API_URL=http://host.docker.internal:3001)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment: &gpp_env
+      # Application identity
+      APP_HOST: ${APP_HOST:-localhost:3000}
+      APPLICATION_NAME: ${APPLICATION_NAME:-Gestionnaire des Processus Projets}
+      APPLICATION_BASE_URL: ${APPLICATION_BASE_URL:-https://demarche.numerique.gouv.fr}
+
+      # SSL
+      # Set to 'false' for plain HTTP testing.
+      FORCE_SSL: ${FORCE_SSL:-false}
+
+      # Required secrets
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE in .env}
+      INVISIBLE_CAPTCHA_SECRET: ${INVISIBLE_CAPTCHA_SECRET:?Set INVISIBLE_CAPTCHA_SECRET in .env}
+      OTP_SECRET_KEY: ${OTP_SECRET_KEY:-}
+      AR_ENCRYPTION_PRIMARY_KEY: ${AR_ENCRYPTION_PRIMARY_KEY:-}
+      AR_ENCRYPTION_KEY_DERIVATION_SALT: ${AR_ENCRYPTION_KEY_DERIVATION_SALT:-}
+
+      # Database
+      DB_DATABASE: ${DB_DATABASE:-gpp_production}
+      DB_HOST: postgres
+      DB_USERNAME: ${DB_USERNAME:-gpp}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_POOL: ${DB_POOL:-10}
+
+
+      REDIS_URL: redis://redis:6379/0
+
+      RAILS_QUEUE_ADAPTER: delayed_job
+
+      # GPP: public platform sync
+      PUBLIC_DS_API_URL: ${PUBLIC_DS_API_URL:-}
+      PUBLIC_DS_API_TOKEN: ${PUBLIC_DS_API_TOKEN:-}
+
+      # File storage
+      # local  — files stored in the app-storage volume (default)
+      # amazon — files stored in S3 (fill in S3_* vars below)
+      ACTIVE_STORAGE_SERVICE: ${ACTIVE_STORAGE_SERVICE:-local}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+
+      WEASYPRINT_URL: http://weasyprint:5000/pdf
+
+      # External government APIs
+      API_ADRESSE_URL: ${API_ADRESSE_URL:-https://data.geopf.fr/geocodage}
+      API_GEO_URL: ${API_GEO_URL:-https://geo.api.gouv.fr}
+      API_EDUCATION_URL: ${API_EDUCATION_URL:-https://data.education.gouv.fr/api/records/1.0}
+      API_ENTREPRISE_KEY: ${API_ENTREPRISE_KEY:-}
+      API_ENTREPRISE_DEFAULT_SIRET: ${API_ENTREPRISE_DEFAULT_SIRET:-}
+
+      # Email
+      MAILTRAP_ENABLED: ${MAILTRAP_ENABLED:-disabled}
+      MAILTRAP_USERNAME: ${MAILTRAP_USERNAME:-}
+      MAILTRAP_PASSWORD: ${MAILTRAP_PASSWORD:-}
+
+      RAILS_LOG_TO_STDOUT: "true"
+      RAILS_SERVE_STATIC_FILES: "true"
+      STRICT_EMAIL_VALIDATION_STARTS_ON: ${STRICT_EMAIL_VALIDATION_STARTS_ON:-2024-02-19}
+      TRUSTED_NETWORKS: ${TRUSTED_NETWORKS:-}
+      LOGRAGE_ENABLED: ${LOGRAGE_ENABLED:-disabled}
+      LOGRAGE_SOURCE: ${LOGRAGE_SOURCE:-gpp_production}
+      SENTRY_ENABLED: ${SENTRY_ENABLED:-disabled}
+      SENTRY_DSN_RAILS: ${SENTRY_DSN_RAILS:-}
+      SENTRY_DSN_JS: ${SENTRY_DSN_JS:-}
+      SENTRY_CURRENT_ENV: ${SENTRY_CURRENT_ENV:-production}
+      CLAMAV_ENABLED: disabled
+      DS_PROXY_URL: ${DS_PROXY_URL:-}
+      # The following are required by config/env.example validation but not used in GPP.
+      FOG_OPENSTACK_API_KEY: ${FOG_OPENSTACK_API_KEY:-}
+      FOG_OPENSTACK_USERNAME: ${FOG_OPENSTACK_USERNAME:-}
+      FOG_OPENSTACK_URL: ${FOG_OPENSTACK_URL:-}
+      FOG_OPENSTACK_REGION: ${FOG_OPENSTACK_REGION:-}
+      SAML_IDP_ENABLED: ${SAML_IDP_ENABLED:-disabled}
+      SKYLIGHT_AUTHENTICATION_KEY: ${SKYLIGHT_AUTHENTICATION_KEY:-}
+      UNIVERSIGN_API_URL: ${UNIVERSIGN_API_URL:-https://ws.universign.eu/tsa/post/}
+      UNIVERSIGN_USERPWD: ${UNIVERSIGN_USERPWD:-}
+
+    volumes:
+      - app-storage:/app/storage
+      - app-tmp:/app/tmp
+
+  worker:
+    build: .
+    image: ${IMAGE:-gpp}:${TAG:-latest}
+    restart: unless-stopped
+    command: bin/rake jobs:work
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment: *gpp_env
+    volumes:
+      - app-storage:/app/storage
+      - app-tmp:/app/tmp
+
+volumes:
+  postgres-data:
+  redis-data:
+  app-storage:
+  app-tmp:
