@@ -1,34 +1,30 @@
-# demarches-simplifiees.fr
+# Portails — Gestionnaire des Processus Projets (GIP CAD)
 
-> [!NOTE]
-> [Lire la version française du README](README.fr.md)
+## Vue d'ensemble
 
-## Context
+Le Gestionnaire des Processus Projets (GPP) est un fork du code open source de [demarches-simplifiees.fr](https://github.com/demarches-simplifiees/demarches-simplifiees.fr), transformé pour répondre aux besoins du GIP CAD. Le code d'origine — conçu comme une plateforme généraliste de dépôt et d'instruction de démarches administratives — est remanié pour servir un objectif spécifique : l'instruction des dossiers de candidature déposés sur la plateforme publique nationale.
 
-[demarches-simplifiees.fr](https://www.demarches-simplifiees.fr) is a web platform designed to address the French government's urgent need to comply with the directive for 100% digitization of administrative procedures.
+Le GPP ne gère pas le dépôt des dossiers par les usagers. Il se connecte à [demarche.numerique.gouv.fr](https://demarche.numerique.gouv.fr/) via son API GraphQL pour récupérer les dossiers déposés, puis offre aux instructeurs du GIP CAD un environnement d'instruction dédié avec des outils spécifiques : checklist de vérification, notes et pièces jointes par champ, et gestion du calendrier CSE.
 
-## How to contribute?
+---
 
-demarches-simplifiees.fr is [open source](https://en.wikipedia.org/wiki/Open-source_software) software under the AGPL license.
+## Installation
 
-Would you like to make changes or improvements? Read our [contribution guide](CONTRIBUTING.md).
+### Dépendances techniques
 
-## Development setup
-
-### Technical dependencies
-
-#### All environments
-
-- postgresql (version >= 15)
-- imagemagick and gsfonts to generate watermarks on identity documents or generate image thumbnails.
+- **PostgreSQL** (version >= 15)
+- **Redis** (pour Sidekiq, le traitement des jobs asynchrones)
+- **rbenv** : voir https://github.com/rbenv/rbenv-installer#rbenv-installer--doctor-scripts
+- **Bun** : voir https://bun.sh/docs/installation
+- **imagemagick** et **gsfonts** pour générer les filigranes sur les titres d'identité et les miniatures d'images
 
 > [!WARNING]
-> Remember to restrict ImageMagick's policy to block exploitation of malicious images.
-> The default configuration is usually insufficient for images from the web.
-> For example, on Debian/Ubuntu in `/etc/ImageMagick-6/policy.xml`:
+> Pensez à restreindre la policy d'ImageMagick pour bloquer l'exploitation d'images malveillantes.
+> La configuration par défaut est généralement insuffisante pour des images provenant du web.
+> Par exemple sous debian/ubuntu dans `/etc/ImageMagick-6/policy.xml` :
 
 ```xml
-<!-- in addition to the default policy, add at the end of the file -->
+<!-- en plus de la policy par défaut, ajoutez à la fin du fichier -->
 <policymap>
     <policy domain="coder" rights="none" pattern="*"/>
     <policy domain="coder" rights="read | write" pattern="{JPG,JPEG,PNG,JSON}"/>
@@ -36,159 +32,207 @@ Would you like to make changes or improvements? Read our [contribution guide](CO
 </policymap>
 ```
 
-We are currently migrating from `delayed_job` to `sidekiq` for asynchronous job processing.
-To run sidekiq, you will need:
+Pour les tests : **Chrome** et **chromedriver** (voir https://developer.chrome.com/blog/chrome-for-testing).
 
-- redis
+### Création des rôles de la base de données
 
-- lightgallery: a license has been purchased to support the project, but it is not required if the library is used as part of an open source application.
-
-#### Development
-
-- rbenv: see https://github.com/rbenv/rbenv-installer#rbenv-installer--doctor-scripts
-- Bun: see https://bun.sh/docs/installation
-
-#### Tests
-
-- Chrome
-- chromedriver:
-  - Mac: `brew install chromedriver`
-  - Linux: see https://developer.chrome.com/blog/chrome-for-testing
-
-If Chrome's installation location is non-standard, or if you're using Brave or Chromium instead,
-you may need to override the path to the Chrome binary for your machine, for example:
-
-```ruby
-# create file spec/support/spec_config.local.rb
-
-Selenium::WebDriver::Chrome.path = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-
-# Must exactly match the browser version
-Webdrivers::Chromedriver.required_version = "103.0.5060.53"
-```
-
-It's also possible to automatically install and update when running `bin/update` by defining the `UPDATE_WEBDRIVER` environment variable. The binaries will be installed in the `~/.local/bin/` directory, which must be manually added to your path.
-
-### Creating database roles
-
-The information needed to initialize the database must be pre-configured manually using the following procedure:
+Les informations nécessaires à l'initialisation de la base doivent être pré-configurées à la main :
 
     su - postgres
     psql
-    > create user tps_development with password 'tps_development' superuser;
-    > create user tps_test with password 'tps_test' superuser;
+    > create user gpp_development with password 'gpp_development' superuser;
+    > create user gpp_test with password 'gpp_test' superuser;
     > \q
 
-### Initializing the development environment
-
-On Ubuntu, some packages must be installed first:
+Sous Ubuntu, certains packages doivent être installés au préalable :
 
     sudo apt-get install libcurl3 libcurl3-gnutls libcurl4-openssl-dev libcurl4-gnutls-dev zlib1g-dev
 
-To initialize the development environment, run the following command:
+### Initialisation de l'environnement
+
+Exécutez la commande suivante pour créer la base de données, installer les dépendances et préparer l'environnement :
 
     bin/setup
 
-### Launching the application
+### Configuration
 
-Start the application server like this:
+Le GPP se configure via le fichier `.env` à la racine du projet (voir `config/env.example` pour la liste complète). Les variables spécifiques au GPP :
 
-    bin/dev
+| Variable | Description |
+|----------|-------------|
+| `PUBLIC_DS_API_URL` | URL de l'instance publique (ex : `https://demarche.numerique.gouv.fr`) |
+| `PUBLIC_DS_API_TOKEN` | Token API généré sur l'instance publique, pour authentifier les appels GraphQL |
+| `APPLICATION_NAME` | Nom affiché dans l'en-tête (par défaut : `Gestionnaire des Processus Projets`) |
 
-The application will then run at `http://localhost:3000` with a worker for jobs and the vitejs bundler running in parallel.
+---
 
-### Test users
+## Lancement de l'application
 
-Locally, a test user is automatically created with the credentials `test@exemple.fr`/`this is a very complicated password !`. (see [db/seeds.rb](https://github.com/betagouv/demarches-simplifiees.fr/blob/dev/db/seeds.rb))
+```bash
+bin/dev
+```
 
-### Scheduling recurring tasks
+L'application est accessible à l'adresse http://localhost:3000 avec en parallèle un worker pour les jobs et le bundler Vite.
 
-    rails jobs:schedule
+Pour lancer uniquement le serveur Rails (sans worker ni Vite) :
 
-### Viewing emails sent locally
+```bash
+bin/rails server
+```
 
-Open the page [http://localhost:3000/letter_opener](http://localhost:3000/letter_opener).
+Le port peut être modifié avec l'option `-p` :
 
-### Updating the application
+```bash
+bin/rails server -p 3001
+```
 
-To update your development environment, install new dependencies, and run migrations:
+### Utilisateurs de test
+
+En local, un utilisateur de test est créé automatiquement par `bin/setup`, avec les identifiants `test@exemple.fr` / `this is a very complicated password !` (voir [db/seeds.rb](db/seeds.rb)).
+
+### Emails envoyés en local
+
+Ouvrez la page http://localhost:3000/letter_opener.
+
+### Mise à jour
+
+Pour mettre à jour l'environnement de développement, installer les nouvelles dépendances et exécuter les migrations :
 
     bin/update
 
-### Running tests (RSpec)
+---
 
-Tests need their own database, and some of them use Selenium to run in a browser. Don't forget to create the test database and install Chrome and chromedriver to run all tests.
+## Prérequis côté plateforme publique
 
-To run the application tests, several options are available:
+L'instance publique demarche.numerique.gouv.fr est un service existant, administré indépendamment. Côté public, il suffit de :
 
-- Run all tests
+1. **Disposer d'un compte administrateur** sur demarche.numerique.gouv.fr
+2. **Créer et publier une démarche** avec le formulaire destiné aux usagers
+3. **Générer un token API** (dans les paramètres de la démarche, rubrique « Token API ») — ce token sera utilisé par le GPP pour interroger l'API GraphQL
 
-        bin/rake spec
-        bin/rspec
+---
 
-- Run a specific test
+## Workflow complet
 
-        bin/rake spec SPEC=file_path/file_name_spec.rb:line_number
-        bin/rspec file_path/file_name_spec.rb:line_number
+### 1. Créer une démarche d'instruction sur le GPP
 
-- Run all tests in a file
+Sur le GPP, un administrateur crée une démarche qui servira de support à l'instruction :
 
-        bin/rake spec SPEC=file_path/file_name_spec.rb
-        bin/rspec file_path/file_name_spec.rb
+1. Se connecter en tant qu'administrateur
+2. Créer une nouvelle démarche
+3. Configurer les champs du formulaire comme des **critères de vérification** — typiquement des champs Oui/Non correspondant aux points de contrôle que l'instructeur devra valider (ex : « Identité du demandeur vérifiée », « Données demandées existent dans l'EDS »)
+4. Publier la démarche
 
-- Only rerun tests that previously failed
+### 2. Lier la démarche GPP à la démarche publique
 
-        bin/rspec --only-failures
+Sur la page de gestion de la démarche (`/admin/procedures/N`), un bloc « Liaison avec la démarche publique » apparaît en haut de la page :
 
-- Run one or more system tests with a visible browser
+1. Saisir le **numéro de la démarche publique** correspondante sur demarche.numerique.gouv.fr
+2. Cliquer « Lier »
 
-        NO_HEADLESS=1 bin/rspec spec/system
+Cela crée une association (`ProcedureMirror`) entre la démarche locale et la démarche publique. Un lien « (voir) » permet de naviguer directement vers la démarche sur l'instance publique. La liaison peut être supprimée à tout moment via le bouton « Délier ».
 
-- Display JavaScript error logs from the browser console (`console.error('hello')`)
+### 3. Les usagers déposent leurs dossiers sur la plateforme publique
 
-        JS_LOG=debug,log,error bin/rspec spec/system
+Les demandeurs accèdent à la démarche sur demarche.numerique.gouv.fr, remplissent le formulaire et déposent leur dossier. Cette étape est entièrement gérée par la plateforme publique — le GPP n'intervient pas.
 
-- Increase latency during end-to-end tests to detect stubborn bugs
+### 4. Synchroniser les dossiers
 
-        MAKE_IT_SLOW=1 bin/rspec spec/system
+La synchronisation peut être déclenchée de deux manières :
 
-### Adding tasks to run during deployment
+- **Manuellement** : sur la page de suivi des dossiers (`/procedures/N/tous`), un bouton « Synchroniser » apparaît dans l'en-tête. Un bouton équivalent est aussi disponible sur la page de configuration de synchronisation de la démarche (Administration).
+- **Automatiquement** : sur la page de gestion de la démarche, le bouton « Synchronisation auto. » permet de configurer une fréquence de synchronisation périodique (en minutes, heures ou jours).
 
-        rails generate maintenance_tasks:task task_name
+La synchronisation utilise l'API GraphQL (`PublicDossierSyncService`) :
+
+- **Nouveaux dossiers** : un dossier local est créé en état « en instruction » avec les informations du demandeur (civilité, nom, prénom, email). Un `LinkedDossier` conserve le lien vers le dossier public (numéro, URL, état).
+- **Dossiers existants** : l'état du dossier public est mis à jour si nécessaire.
+
+### 5. Instruire un dossier
+
+L'instructeur ouvre un dossier synchronisé. La page du dossier présente plusieurs blocs :
+
+#### Bloc « Dossier lié »
+- Lien direct vers le dossier sur demarche.numerique.gouv.fr (ouvre dans un nouvel onglet)
+- Badge d'état du dossier public (en construction, en instruction, accepté, etc.)
+- Identité du demandeur : civilité, prénom, nom, adresse email
+
+#### Bloc « Vérifications du dossier » (checklist)
+Les champs Oui/Non définis dans la démarche GPP sont présentés comme une checklist :
+
+- L'instructeur coche Oui ou Non pour chaque critère de contrôle
+- Sous chaque champ, il peut ajouter une **note** (texte libre, sauvegarde automatique) pour justifier sa décision
+- Il peut joindre des **pièces justificatives** à chaque note (fichiers téléversés, supprimables individuellement)
+
+#### Contrainte de validation
+Le bouton « Accepter » dans le menu d'instruction est **désactivé** tant que tous les champs Oui/Non ne sont pas cochés « Oui ». Un tooltip explique cette contrainte. Les actions « Classer sans suite » et « Refuser » restent disponibles à tout moment.
+
+#### Vue lecture seule
+Une fois le dossier terminé (accepté, refusé ou classé sans suite), les vérifications, notes et pièces jointes sont affichées en lecture seule dans le récapitulatif.
+
+---
+
+## Tableau de suivi des dossiers
+
+Le tableau des dossiers affiche par défaut les colonnes suivantes :
+
+| Colonne | Description |
+|---------|-------------|
+| N° dossier | Numéro du dossier local |
+| Demandeur | Email du demandeur |
+| Date de dépôt | Date à laquelle le demandeur a déposé le dossier sur la plateforme publique |
+| N° dossier lié | Numéro du dossier public (lien cliquable vers demarche.numerique.gouv.fr) |
+| État du dossier lié | État actuel du dossier sur la plateforme publique |
+
+Le tableau est trié par date de dépôt (du plus ancien au plus récent) par défaut.
+
+---
+
+## Module Calendrier CSE
+
+Les dossiers déposés sont examinés lors de Comités Sociaux et Économiques (CSE) mensuels. Un dossier doit être déposé **au moins 2 semaines avant la date du CSE** (T0 − 2 semaines) pour être étudié lors de cette session.
+
+### Configuration (administrateur)
+
+Sur la page de gestion de la démarche, le bouton « Calendrier CSE » (bloc « Autres paramètres ») mène à une page de configuration :
+
+- Un **calendrier interactif** permet de sélectionner/désélectionner des dates en cliquant dessus
+- La liste des dates sélectionnées s'affiche à droite avec la date limite de dépôt calculée automatiquement (T0 − 2 semaines)
+- Bouton « Enregistrer » pour sauvegarder, « Annuler et revenir à l'écran de gestion » pour abandonner (avec confirmation)
+
+### Affichage dans le tableau des dossiers (instructeur)
+
+Lorsque le tableau est trié par date de dépôt, un **séparateur visuel** apparaît :
+
+- Une barre bleue indique la date du prochain CSE et la date limite de dépôt correspondante
+- Les dossiers déposés **après** la date limite sont **grisés** (opacité réduite) — ils ne seront pas étudiés lors du prochain CSE
+- Les dossiers déposés **avant** la date limite apparaissent normalement — ils sont éligibles
+
+Le séparateur n'apparaît que lorsque le tableau est trié par date de dépôt.
+
+---
+
+## Tests
+
+Les tests ont besoin de leur propre base de données et certains d'entre eux utilisent Selenium pour s'exécuter dans un navigateur.
+
+- Lancer tous les tests : `bin/rspec`
+- Lancer un test en particulier : `bin/rspec file_path/file_name_spec.rb:line_number`
+- Relancer uniquement les tests échoués : `bin/rspec --only-failures`
+- Tests système avec navigateur visible : `NO_HEADLESS=1 bin/rspec spec/system`
+- Afficher les logs JS de la console : `JS_LOG=debug,log,error bin/rspec spec/system`
 
 ### Linting
 
-The project uses several linters to check code readability and quality.
+Faire tourner tous les linters : `bin/rake lint`
 
-- Run all linters: `bin/rake lint`
-- Check the status of translations: `bundle exec i18n-tasks health`
-- [AccessLint](http://accesslint.com/) runs automatically on PRs
+---
 
-### Regenerating binstubs
+## Modèles de données ajoutés
 
-    bundle binstub railties --force
-    bin/rake rails:update:bin
-
-## Deployment
-
-See deployment notes in [DEPLOYMENT.md](doc/DEPLOYMENT.md)
-
-## Common tasks
-
-### Super-admin account management tasks
-
-Super-admin account management tasks are available in the `superadmin` namespace.
-To list them: `bin/rake -D superadmin:`.
-
-### Support tasks
-
-Support tasks are available in the `support` namespace.
-To list them: `bin/rake -D support:`.
-
-## Performance
-
-[![View performance data on Skylight](https://badges.skylight.io/status/zAvWTaqO0mu1.svg)](https://oss.skylight.io/app/applications/zAvWTaqO0mu1)
-
-We use Skylight to monitor our application's performance.
-
-Additionally, we use [Yabeda](https://github.com/yabeda-rb/yabeda) to export Prometheus-format metrics for Sidekiq. This is activated via the `PROMETHEUS_EXPORTER_ENABLED` environment variable (see config/env.example.optional).
+| Modèle | Description |
+|--------|-------------|
+| `ProcedureMirror` | Associe une démarche GPP à une démarche publique (URL + numéro) |
+| `LinkedDossier` | Lie un dossier local à un dossier public (numéro, URL, état, identité du demandeur) |
+| `ChampNote` | Note de l'instructeur sur un champ de vérification (texte + pièces jointes) |
+| `CseDate` | Date d'un CSE configurée pour une démarche |
