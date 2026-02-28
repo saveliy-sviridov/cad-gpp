@@ -1,9 +1,0 @@
-= content_for(:page_id, 'activate_account')
-= content_for(:title, t('metas.users.activate.title', application_name: Current.application_name))
-
-.fr-container.fr-my-5w
-  .fr-grid-row
-    .fr-col-12.fr-col-offset-md-2.fr-col-md-8
-      = render Instructeurs::ActivateAccountFormComponent.new(user: @user)
-
-= render partial: 'application/footer'

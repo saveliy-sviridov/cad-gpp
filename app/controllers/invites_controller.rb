@@ -44,13 +44,13 @@ class InvitesController < ApplicationController
 
       redirect_to helpers.url_for_dossier(dossier)
     elsif params[:email].present? && !User.find_by(email: params[:email])
-      redirect_to new_user_registration_path(user: { email: params[:email] })
+      redirect_to new_user_session_path(user: { email: params[:email] })
     else
       authenticate_user!
     end
   rescue ActiveRecord::RecordNotFound
     flash.alert = t('errors.messages.dossier_not_found')
-    redirect_to dossiers_path
+    redirect_to root_path
   end
 
   def destroy

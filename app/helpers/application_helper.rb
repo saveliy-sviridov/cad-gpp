@@ -81,8 +81,6 @@ module ApplicationHelper
     case nav_bar_profile
     when :instructeur
       instructeur_procedures_path
-    when :user
-      dossiers_path
     else
       root_path
     end
@@ -96,8 +94,6 @@ module ApplicationHelper
       [gestionnaire_groupe_gestionnaires_path, t("gestionnaire", scope: "layouts.root_path_link_title")]
     when :instructeur
       [instructeur_procedures_path, t("instructeur", scope: "layouts.root_path_link_title")]
-    when :user
-      [dossiers_path, t("user", scope: "layouts.root_path_link_title")]
     else
       [root_path, t("default", scope: "layouts.root_path_link_title")]
     end

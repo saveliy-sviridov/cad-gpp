@@ -11,15 +11,11 @@ class RootController < ApplicationController
       return redirect_to instructeur_procedures_path
     elsif expert_signed_in?
       return redirect_to expert_all_avis_path
-    elsif user_signed_in?
-      return redirect_to dossiers_path
     elsif super_admin_signed_in?
       return redirect_to manager_root_path
     end
 
-    @stat = Stat.first
-
-    render 'landing'
+    redirect_to pro_connect_path
   end
 
   def administration

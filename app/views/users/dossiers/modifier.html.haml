@@ -1,9 +1,0 @@
-- content_for(:title, "Modifier · Dossier n° #{@dossier.id} (#{@dossier.procedure.libelle})")
-
-- content_for :footer do
-  = render partial: "users/procedure_footer", locals: { procedure: @dossier.procedure, dossier: @dossier }
-
-.dossier-container
-  = render partial: 'users/dossiers/show/header', locals: { dossier: @dossier }
-
-  = render partial: "shared/dossiers/edit", locals: { dossier: @dossier }

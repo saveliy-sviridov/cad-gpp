@@ -17,10 +17,6 @@
       - if !@procedure.brouillon?
         = link_to 'Télécharger', admin_procedure_archives_path(@procedure), class: 'fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-download-line', id: "archive-procedure"
 
-        = link_to 'PDF', commencer_dossier_vide_for_revision_path(@procedure.active_revision), target: "_blank", rel: "noopener", class: 'fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-printer-line', id: "pdf-procedure"
-
-      - if @procedure.brouillon? || @procedure.draft_changed?
-        = link_to 'Tester la démarche', commencer_url(@procedure.path, test: true), target: :blank, rel: :noopener, class: 'fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-flashlight-line'
 
       - if @procedure.brouillon?
         = link_to 'Cloner', admin_procedure_clone_settings_path(@procedure), class: 'fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-file-copy-line', id: "clone-procedure"
@@ -99,7 +95,7 @@
             = link_to(new_procedure.libelle, admin_procedure_path(new_procedure))
         - if @procedure.closing_reason == 'other'
           %p
-            = "Plus d'informations dans la #{link_to('page de fermeture', closing_details_path(@procedure.path))}, visible par les usagers."
+            = "Plus d'informations dans la page de fermeture, visible par les usagers."
         - if @procedure.closing_notification_brouillon? || @procedure.closing_notification_en_cours?
           = "Un email a été envoyé pour informer les usagers le #{ l(@procedure.closed_at.to_date) }"
 

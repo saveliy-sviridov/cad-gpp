@@ -153,19 +153,15 @@ Rails.application.routes.draw do
   get 'super_admins/edit_otp', to: 'super_admins#edit_otp', as: 'edit_super_admin_otp'
   put 'super_admins/enable_otp', to: 'super_admins#enable_otp', as: 'enable_super_admin_otp'
 
-  devise_for :users, controllers: {
+
+  devise_for :users, only: [:sessions], controllers: {
     sessions: 'users/sessions',
-    registrations: 'users/registrations',
-    confirmations: 'users/confirmations',
-    passwords: 'users/passwords',
   }
 
   devise_scope :user do
-    get '/users/no_procedure' => 'users/sessions#no_procedure'
     get 'connexion-par-jeton/:id' => 'users/sessions#sign_in_by_link', as: 'sign_in_by_link'
     get 'lien-envoye' => 'users/sessions#link_sent', as: 'link_sent'
     post '/instructeurs/reset-link-sent' => 'users/sessions#reset_link_sent'
-    get '/users/password/reset-link-sent' => 'users/passwords#reset_link_sent'
     get 'logout' => 'users/sessions#logout'
   end
 
@@ -184,26 +180,11 @@ Rails.application.routes.draw do
   root 'root#index'
   get '/administration' => 'root#administration'
 
-  get 'users' => 'users#index'
   get 'admin' => 'admin#index'
 
   get '/stats' => 'stats#index'
   get '/stats/download' => 'stats#download'
 
-  scope 'france_connect', as: :france_connect, controller: :france_connect do
-    get '/' => :login
-    get 'callback'
-    post 'send_email_merge_request'
-    get 'merge_using_email_link/:email_merge_token' => :merge_using_email_link, as: :merge_using_email_link
-    post 'merge_using_fc_email'
-    post 'merge_using_password'
-    get 'confirm_email/:token' => :confirm_email, as: :confirm_email
-
-    # to be migrated
-    get 'particulier/merge_using_email_link/:email_merge_token' => :merge_using_email_link
-
-    get 'redirect_uris'
-  end
 
   get 'pro_connect' => 'pro_connect#index'
   get 'pro_connect/login' => 'pro_connect#login'
@@ -270,29 +251,6 @@ Rails.application.routes.draw do
     get :search_ref_programmation, to: 'chorus#search_ref_programmation', as: :search_ref_programmation
   end
 
-  #
-  # Deprecated UI
-  #
-
-  namespace :users do
-    resources :dossiers, only: [] do
-      post '/carte/zones' => 'carte#zones'
-      get '/carte' => 'carte#show'
-      post '/carte' => 'carte#save'
-      post '/repousser-expiration' => 'dossiers#extend_conservation'
-      post '/repousser-expiration-and-restore' => 'dossiers#extend_conservation_and_restore'
-    end
-
-    # Redirection of legacy "/users/dossiers" route to "/dossiers"
-    get 'dossiers', to: redirect('/dossiers')
-    get 'dossiers/:id/recapitulatif', to: redirect('/dossiers/%{id}')
-    get 'dossiers/invites/:id', to: redirect(path: '/invites/%{id}')
-
-    get 'activate' => '/users/activate#new'
-    patch 'activate' => '/users/activate#create'
-    get 'confirm_email/:token' => '/users/activate#confirm_email', as: :confirm_email
-    post 'resend_verification_email', to: '/users/activate#resend_verification_email', as: :resend_confirmation_email
-  end
 
   # order matters: we don't want those routes to match /admin/procedures/:id
   get 'admin/procedures/new' => 'administrateurs/procedures#new', as: :new_admin_procedure
@@ -349,74 +307,17 @@ Rails.application.routes.draw do
     end
   end
 
-  #
-  # User
-  #
 
-  scope module: 'users' do
-    namespace :statistiques do
-      get '/:path', action: 'statistiques'
-    end
-
-    namespace :commencer do
-      get '/test/:path/dossier_vide', action: :dossier_vide_pdf_test, as: :dossier_vide_test
-      get '/test/:path', action: 'commencer_test', as: :test
-      get '/:path', action: 'commencer'
-      get '/:path/dossier_vide', action: 'dossier_vide_pdf', as: :dossier_vide
-      get '/:path/sign_in', action: 'sign_in', as: :sign_in
-      get '/:path/sign_up', action: 'sign_up', as: :sign_up
-      get '/:path/france_connect', action: 'france_connect', as: :france_connect
-      get '/:path/pro_connect', action: 'pro_connect', as: :pro_connect
-    end
-
-    resources :dossiers, only: [:index, :show, :destroy, :new] do
-      member do
-        get 'identite'
-        patch 'identite'
-        patch 'update_identite'
-        post 'clone'
-        get 'siret'
-        post 'siret', to: 'dossiers#update_siret'
-        get 'etablissement'
-        get 'brouillon'
-        patch 'brouillon', to: 'dossiers#update'
-        post 'brouillon', to: 'dossiers#submit_brouillon'
-        get 'modifier', to: 'dossiers#modifier'
-        post 'modifier', to: 'dossiers#submit_en_construction'
-        post 'check_completude', to: 'dossiers#check_completude'
-        get 'champs/:stable_id', to: 'dossiers#champ', as: :champ
-        get 'merci'
-        get 'demande'
-        get 'messagerie'
-        get 'rendez-vous'
-        post 'commentaire' => 'dossiers#create_commentaire'
-        patch 'restore', to: 'dossiers#restore'
-        get 'attestation'
-        get 'transferer', to: 'dossiers#transferer'
-        get 'papertrail', format: :pdf
-        get 'set_accuse_lecture_agreement_at'
-        get 'corbeille', to: 'dossiers#show_in_trash'
-        get 'supprime', to: 'dossiers#show_deleted'
-      end
-
-      collection do
-        resources :transfers, only: [:create, :update, :destroy]
-      end
-    end
-
-    resource :feedback, only: [:create]
-    get 'demarches' => 'demarches#index'
-    get 'deleted_dossiers' => 'dossiers#deleted_dossiers'
-
-    get 'profil' => 'profil#show'
-    patch 'update_email' => 'profil#update_email'
-    post 'transfer_all_dossiers' => 'profil#transfer_all_dossiers'
-    post 'accept_merge' => 'profil#accept_merge'
-    post 'refuse_merge' => 'profil#refuse_merge'
-    delete 'france_connect_information' => 'profil#destroy_fci'
-    patch 'preferred_domain', to: 'profil#preferred_domain'
-    get 'fermeture/:path', to: 'commencer#closing_details', as: :closing_details
-  end
+  # Routes removed (no citizen-facing forms in GPP).
+  # Kept as named routes only so URL helpers resolve without crashing.
+  get '/commencer/:path', to: 'errors#not_found', as: :commencer
+  get '/users/sign_up', to: 'errors#not_found', as: :new_user_registration
+  get '/users/password/new', to: 'errors#not_found', as: :new_user_password
+  get '/users/password/edit', to: 'errors#not_found', as: :edit_user_password
+  get '/commencer-dossier-vide/:path', to: 'errors#not_found', as: :commencer_dossier_vide
+  get '/commencer-dossier-vide/test/:path', to: 'errors#not_found', as: :commencer_dossier_vide_test
+  get '/users/activate', to: redirect('/pro_connect'), as: :users_activate
+  get '/users/confirm-email', to: redirect('/pro_connect'), as: :users_confirm_email
 
   get 'procedures/:id/logo', to: 'procedures#logo', as: :procedure_logo
 
@@ -901,6 +802,5 @@ Rails.application.routes.draw do
   get 'demandes/new' => redirect(DEMANDE_INSCRIPTION_ADMIN_PAGE_URL)
 
   get 'backoffice' => redirect('/procedures')
-  get 'backoffice/sign_in' => redirect('/users/sign_in')
   get 'backoffice/dossiers/procedure/:procedure_id' => redirect('/procedures/%{procedure_id}')
 end

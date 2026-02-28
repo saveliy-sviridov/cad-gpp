@@ -7,7 +7,7 @@ module TableauDeBordHelper
     elsif current_instructeur.present?
       instructeur_procedures_path
     else
-      dossiers_path
+      root_path
     end
   end
 end

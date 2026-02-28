@@ -21,8 +21,6 @@
           = t('activerecord.attributes.procedure.hints.procedure_path')
       .fr-input
         .flex
-          %span.placeholder
-            = commencer_url(path: '')
           = text_field_tag(:path, @procedure.path,
                           id: 'procedure_path',
                           placeholder: t('activerecord.attributes.procedure.procedure_path_placeholder'),
@@ -39,7 +37,6 @@
           Pour information les liens précédents resteront accessibles tant qu'ils ne sont pas utilisés par une autre de vos démarches :
         %ul
           - @procedure.previous_paths.each do |path|
-            %li.fr-mb-1w
-              = link_to commencer_url(path: path.path), commencer_url(path: path.path), class: 'fr-link fr-link--sm'
+            %li.fr-mb-1w= path.path
 
   = render Procedure::FixedFooterComponent.new(procedure: @procedure, form: f)

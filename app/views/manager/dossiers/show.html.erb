@@ -82,7 +82,7 @@
               lien procedure
             </dt>
             <dd class="attribute-data attribute-data--<%= attribute.html_class %>">
-              <%= link_to(commencer_path(procedure.canonical_path), commencer_path(procedure.canonical_path)) %>
+              <%= procedure.canonical_path %>
             </dd>
           <% else %>
             <dd class="attribute-data attribute-data--<%= attribute.html_class %>">

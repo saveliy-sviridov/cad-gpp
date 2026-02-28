@@ -16,11 +16,6 @@
             = link_to "#", class: "fr-nav__link", "aria-current" => "true" do
               = t('.connected_as', profile: t(nav_bar_profile, scope: :layouts))
 
-          - if user_signed_in? && nav_bar_profile != :user
-            %li
-              = link_to dossiers_path, class: "fr-nav__link" do
-                %span.fr-icon-refresh-line.fr-icon--sm
-                = t('.go_user')
           - if instructeur_signed_in? && nav_bar_profile != :instructeur
             %li
               = link_to instructeur_path, class: "fr-nav__link" do
@@ -48,10 +43,6 @@
               %span.fr-icon-shield-line.fr-icon--sm
               = t('.go_superadmin')
 
-        %li
-          = link_to profil_path, class: "fr-nav__link" do
-            %span.fr-icon-user-line.fr-icon--sm
-            = t('.profile')
         %li
           = link_to destroy_user_session_path, method: :delete, class: "fr-nav__link" do
             %span.fr-icon-logout-box-r-line.fr-icon--sm

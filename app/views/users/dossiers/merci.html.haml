@@ -1,6 +1,0 @@
-- content_for(:title, t(".title", scope: :metas, procedure_label: @dossier.procedure.libelle))
-
-- content_for :footer do
-  = render partial: "users/procedure_footer", locals: { procedure: @dossier.procedure, dossier: @dossier }
-
-= render partial: 'users/dossiers/merci', locals: { dossier: @dossier, procedure: @dossier.procedure}

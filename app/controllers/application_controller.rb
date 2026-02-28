@@ -46,9 +46,6 @@ class ApplicationController < ActionController::Base
   before_action :redirect_transitoire_domain
 
   def staging_authenticate
-    # france connect sector identifier system does not support basic auth
-    return if request.path == france_connect_redirect_uris_path
-
     if StagingAuthService.enabled? && !authenticate_with_http_basic { |username, password| StagingAuthService.authenticate(username, password) }
       request_http_basic_authentication
     end
@@ -170,34 +167,34 @@ class ApplicationController < ActionController::Base
   def authenticate_instructeur!
     if !instructeur_signed_in?
       store_location_for(:user, request.fullpath)
-      redirect_to new_user_session_path
+      redirect_to pro_connect_path
     end
   end
 
   def authenticate_expert!
     if !expert_signed_in?
       store_location_for(:user, request.fullpath)
-      redirect_to new_user_session_path
+      redirect_to pro_connect_path
     end
   end
 
   def authenticate_instructeur_or_expert!
     if !instructeur_signed_in? && !expert_signed_in?
       store_location_for(:user, request.fullpath)
-      redirect_to new_user_session_path
+      redirect_to pro_connect_path
     end
   end
 
   def authenticate_administrateur!
     if !administrateur_signed_in?
       store_location_for(:user, request.fullpath)
-      redirect_to new_user_session_path
+      redirect_to pro_connect_path
     end
   end
 
   def authenticate_gestionnaire!
     if !gestionnaire_signed_in?
-      redirect_to new_user_session_path
+      redirect_to pro_connect_path
     end
   end
 
@@ -234,13 +231,8 @@ class ApplicationController < ActionController::Base
     end
   end
 
-  CHATBOT_DISABLED_PAGES = [
-    ['users/dossiers', 'brouillon'],
-    ['users/dossiers', 'modifier'],
-  ].freeze
-
   def chatbot_disabled_page?
-    CHATBOT_DISABLED_PAGES.include?([controller_path, action_name])
+    false
   end
 
   def current_user_roles
@@ -345,7 +337,6 @@ class ApplicationController < ActionController::Base
     path = request.path_info
 
     if path == '/' ||
-      path == '/users/sign_out' ||
       path == '/contact' ||
       path == '/contact-admin' ||
       path.start_with?('/connexion-par-jeton') ||
